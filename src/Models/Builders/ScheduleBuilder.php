@@ -101,18 +101,25 @@ class ScheduleBuilder extends Builder
                     })
 
                     //
-                    // 3️⃣ WEEKLY | BI-WEEKLY — match weekday inside config
+                    // 3️⃣ WEEKLY — match weekday inside config
                     //
                     ->orWhere(function ($weekly) use ($weekday) {
                         $weekly->where('is_recurring', true)
-                            ->whereIn(
-                                'frequency',
-                                array_map(
-                                    fn (Frequency $frequency) => $frequency->value,
-                                    Frequency::filteredByWeekday()
-                                )
-                            )
+                            ->where('frequency', Frequency::WEEKLY->value)
                             ->whereJsonContains('frequency_config->days', $weekday);
+                    })
+                    //
+                    // 3b️⃣ BI-WEEKLY — match weekday AND ISO week parity relative to startsOn
+                    //
+                    ->orWhere(function ($biweekly) use ($weekday, $isDateInEvenIsoWeek) {
+                        $biweekly->where('is_recurring', true)
+                            ->where('frequency', Frequency::BIWEEKLY->value)
+                            ->whereJsonContains('frequency_config->days', $weekday)
+                            ->where(function ($parity) use ($isDateInEvenIsoWeek) {
+                                // null = old record without isEvenStartWeek → include for backward compat
+                                $parity->whereNull('frequency_config->isEvenStartWeek')
+                                    ->orWhere('frequency_config->isEvenStartWeek', $isDateInEvenIsoWeek);
+                            });
                     })
                     //
                     // 4️⃣ WEEKLY_EVEN | WEEKLY_ODD — match weekday inside config

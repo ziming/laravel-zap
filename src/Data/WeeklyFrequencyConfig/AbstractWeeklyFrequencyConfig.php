@@ -16,6 +16,8 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
 {
     public ?CarbonInterface $startsOn = null;
 
+    public ?bool $isEvenStartWeek = null;
+
     public function __construct(
         public array $days = [],
         CarbonInterface|string|null $startsOn = null,
@@ -31,6 +33,7 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
         $this->startsOn = $this->normalizeToAppTimezone($startsOn)->startOfWeek(
             config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY)
         );
+        $this->isEvenStartWeek = $this->startsOn->isoWeek() % 2 === 0;
     }
 
     public static function fromArray(array $data): self
@@ -54,6 +57,7 @@ abstract class AbstractWeeklyFrequencyConfig extends FrequencyConfig
         $this->startsOn = $this->normalizeToAppTimezone($startDate)->startOfWeek(
             config()->integer('zap.calendar.week_start', CarbonInterface::MONDAY)
         );
+        $this->isEvenStartWeek = $this->startsOn->isoWeek() % 2 === 0;
 
         return $this;
     }
